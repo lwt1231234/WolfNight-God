@@ -16,19 +16,17 @@ public class GameControl : MonoBehaviour {
 	//预设体
 	public GameObject PlayerCard, PlayerName,DeadMark;
 	//全局对象
-	public GameObject ConfigUI,PlayerUI,ChoosePlayer,ShowInfo,ShowPlayer,GoNext,PlayerNow,GameStatus;
+	public GameObject ConfigUI,PlayerUI,PlayerUIConfig,ChoosePlayer,ShowInfo,ShowPlayer,GoNext,PlayerNow,GameStatus,SpeakContent;
 
 	//局部变量
 	GameObject[] Player = new GameObject[20],Lovers = new GameObject[2],Deaded= new GameObject[20];
-	string[] PlayerRole = new string[20];
-	string[] RoleList = {"狼人","狼人","狼人","狼人","先知","女巫","守卫","丘比特","猎人","长老","村民","村民","村民","村民","村民","村民","村民","村民"};
-	GameObject jisha,shouhu,nvwu,dusha,toupiao,jingzhang;
+	//string[] PlayerRole = new string[20];
+	//string[] RoleList = {"狼人","狼人","狼人","狼人","先知","女巫","守卫","丘比特","猎人","长老","村民","村民","村民","村民","村民","村民","村民","村民"};
+	GameObject jisha,shouhu,dusha,toupiao,jingzhang;
 	bool jieyaoyongle,duyaoyongle,shiyongjieyao,shaguozhanglao,diyiye,jingzhangsiwang,lierensiwang;
 	string jieguo,time;
 	int day;
 
-
-	// Use this for initialization
 	void Start () {
 		//初始化游戏界面
 		CanClick = true;
@@ -38,10 +36,378 @@ public class GameControl : MonoBehaviour {
 		ShowInfo.SetActive (false);
 		ShowPlayer.SetActive (false);
 		GameStage = "准备开始";
-        GameMode = "God";
+		GameMode = "God";
 		GameObject.Find ("MainCanvas/NextStage").GetComponent<Button> ().interactable=false;
 	}
-	
+
+
+
+
+	//--------------------------------游戏中配置玩家信息
+	public void SetCupid()
+	{
+		PlayerNow.GetComponent<PlayerCard> ().Role = "丘比特";
+		SelectPlayer (PlayerNow);
+	}
+	public void SetLover()
+	{
+		PlayerNow.GetComponent<PlayerCard> ().IsLover = !PlayerNow.GetComponent<PlayerCard> ().IsLover;
+		SelectPlayer (PlayerNow);
+	}
+	public void SetWolf()
+	{
+		PlayerNow.GetComponent<PlayerCard> ().Role = "狼人";
+		SelectPlayer (PlayerNow);
+	}
+	public void SetWitch()
+	{
+		PlayerNow.GetComponent<PlayerCard> ().Role = "女巫";
+		SelectPlayer (PlayerNow);
+	}
+	public void SetKill()
+	{
+		if (jisha != PlayerNow)
+			jisha = PlayerNow;
+		else
+			jisha = null;
+		SelectPlayer (PlayerNow);
+	}
+	public void SetPoison()
+	{
+		if (dusha != PlayerNow)
+			dusha = PlayerNow;
+		else
+			dusha = null;
+		SelectPlayer (PlayerNow);
+	}
+
+	public void SelectPlayer(GameObject P)
+	{
+		PlayerUIConfig.SetActive (true);
+		CanClick = false;
+		string str;
+		str = P.GetComponent<PlayerCard> ().PlayerID.ToString () + "号玩家：" + P.GetComponent<PlayerCard> ().Name;
+		if (P.GetComponent<PlayerCard> ().IsAlive)
+			str += "，存活\n";
+		else
+			str += "，死亡\n";
+		str+= "身份："+P.GetComponent<PlayerCard>().Role;
+		if (P.GetComponent<PlayerCard> ().IsLover)
+			str += "、情侣";
+		str += "\n";
+		if (jisha == P)
+			str += "被击杀";
+		if (dusha == P)
+			str += "被毒杀";
+		GameObject.Find ("PlayerConfig/Text").GetComponent<Text> ().text = str;
+	}
+
+
+
+
+	//--------------------------------游戏进度控制
+	//游戏开始->天黑阶段
+	public void GameStart(){
+		if (GameStage != "准备开始")
+			return;
+//		if (PlayerNum < 1) {
+//			GameStatus.GetComponent<Text>().text="压根没玩家啊！";
+//			return;
+//		}
+//		if (Toggles [0] > PlayerNum) {
+//			GameStatus.GetComponent<Text>().text="角色数量大于玩家数量";
+//			return;
+//		}
+//		if (Toggles [0] < PlayerNum) {
+//			GameStatus.GetComponent<Text>().text="角色数量小于玩家数量";
+//			return;
+//		}
+		ConfigUI.SetActive (false);
+		PlayerUI.SetActive (false);
+		PlayerUIConfig.SetActive (true);
+		if (Toggles [8] == 0) {//有丘比特
+			GameObject.Find ("PlayerConfig/Cupid").GetComponent<Button> ().interactable = false;
+			GameObject.Find ("PlayerConfig/Lover").GetComponent<Button> ().interactable = false;
+		} else {
+			GameObject.Find ("PlayerConfig/Cupid").GetComponent<Button> ().interactable = true;
+			GameObject.Find ("PlayerConfig/Lover").GetComponent<Button> ().interactable = true;
+		}
+		if (Toggles [6] == 0) {//有丘比特
+			GameObject.Find ("PlayerConfig/Witch").GetComponent<Button> ().interactable = false;
+		} else {
+			GameObject.Find ("PlayerConfig/Witch").GetComponent<Button> ().interactable = true;
+		}
+		PlayerUIConfig.SetActive (false);
+
+		GameStatus.GetComponent<Text>().text="游戏开始";
+		//初始化游戏参数
+		DeadNum =0;
+		day = 0;
+		Lover = 0;
+		Lovers [0] = null;
+		Lovers [1] = null;
+		jisha = null;
+		shouhu = null;
+		dusha = null;
+		toupiao = null;
+		jingzhang = null;
+		jieyaoyongle = false;
+		duyaoyongle = false;
+		shiyongjieyao = false;
+		shaguozhanglao = false;
+		jingzhangsiwang = false;
+		lierensiwang = false;
+		time = "";
+		diyiye = true;
+		//		//根据配置获得角色列表
+		//		int i, j;
+		//		j = 0;
+		//		for (i = 1; i <= 18; i++) {
+		//			if (Toggles [i] == 1) {
+		//				PlayerRole [j] = RoleList [i-1];
+		//				j++;
+		//			}
+		//		}
+		//		//随机给每个玩家分配角色
+		//		int rand;
+		//		for(i=0;i<PlayerNum;i++){
+		//			rand = Random.Range (0, PlayerNum - i);
+		//			Player[i].GetComponent<PlayerCard> ().Role = PlayerRole [rand];
+		//			Player [i].GetComponent<PlayerCard> ().IsAlive = true;
+		//			if (PlayerRole [rand] == "女巫")
+		//				nvwu = Player [i];
+		//			for(j=rand;j<PlayerNum-1;j++){
+		//				PlayerRole[j]=PlayerRole[j+1];
+		//			}
+		//		}
+		//		GameStatus.GetComponent<Text>().text="请点击自己的卡牌查看身份";
+		//		GameStage = "查看身份";
+		//		CanClick = true;
+		//重置每个玩家身份为未标记
+		int i;
+		for (i = 0; i < PlayerNum; i++) {
+			Player [i].GetComponent<PlayerCard> ().Role = "未标记";
+			Player [i].GetComponent<PlayerCard> ().IsAlive = true;
+			Player [i].GetComponent<PlayerCard> ().IsLover = false;
+		}
+		
+		GameObject.Find ("MainCanvas/Mark").GetComponent<Button> ().interactable=false;
+		GameObject.Find ("MainCanvas/Gamestart").GetComponent<Button> ().interactable=false;
+		GameObject.Find ("MainCanvas/GameExit").GetComponent<Button> ().interactable=false;
+		GameObject.Find ("MainCanvas/Addplayer").GetComponent<Button> ().interactable=false;
+		GameObject.Find ("MainCanvas/GameConfigButton").GetComponent<Button> ().interactable=false;
+		GameObject.Find ("MainCanvas/NextStage").GetComponent<Button> ().interactable=true;
+		//		SortByRole ();
+		Stage_tianhei ();
+	}
+
+	//天黑阶段->丘比特阶段
+	void Stage_tianhei(){
+		GameStage = "天黑";
+		SpeakContent.GetComponent<Text>().text="天黑请闭眼";
+		GameStatus.GetComponent<Text>().text="3秒后自动转到下个阶段";
+		CanClick = true;
+		GoNext.GetComponent<Button> ().interactable=false;
+		Invoke ("EnableNextStage", 3.0f);
+		Invoke ("Stage_qiubite", 3.0f);
+	}
+
+	//丘比特阶段->等上帝点下一步->情侣阶段
+	void Stage_qiubite(){
+		GameStage = "丘比特";
+		if (Toggles [8] == 0||diyiye==false) {
+			Invoke ("Stage_langren", 0.0f);
+			return;
+		}
+		SpeakContent.GetComponent<Text>().text="1.丘比特请睁眼\n2.请选择情侣\n3.丘比特请闭眼";
+		GameStatus.GetComponent<Text>().text="1.标记丘比特\n2.标记情侣\n3.完成后点击下一步";
+		CanClick = true;
+		GoNext.GetComponent<Button> ().interactable=true;
+	}
+
+	//情侣阶段->等上帝点下一步->狼人阶段
+	void Stage_qinglv(){
+		GameStage = "情侣";
+		SpeakContent.GetComponent<Text>().text="1.请伸手\n2.被碰到的情侣请睁眼\n3.情侣请闭眼";
+		GameStatus.GetComponent<Text>().text="1.绕场一周，触碰情侣\n2.等情侣互相确认\n3.完成后点击下一步";
+	}
+
+	//狼人阶段->等上帝点下一步->女巫阶段
+	void Stage_langren(){
+		GameStage = "狼人";
+		SpeakContent.GetComponent<Text>().text="1.狼人请睁眼\n2.狼人请确定杀人目标\n3.狼人请闭眼";
+		GameStatus.GetComponent<Text>().text="1.标记狼人(第一夜)\n2.标记被杀目标\n3.平票或标记完成后点击下一步";
+		jisha = null;
+		CanClick = true;
+	}
+	//女巫解药->等上帝点下一步->女巫毒药
+	void Stage_nvwu_jieyao(){
+		string str;
+		GameStage = "女巫解药";
+		if (Toggles [6] == 0) {
+			Invoke ("Stage_shouwei", 0.0f);
+			return;
+		}
+		str = "1.女巫请睁眼\n2.";
+		if (jisha != null) {
+			str += jisha.GetComponent<PlayerCard> ().PlayerID.ToString () + jisha.GetComponent<PlayerCard> ().Name + "(比手势)被杀了，是否救他\n";
+		} else
+			str += "无人被杀(摇头)，是否救他";
+		SpeakContent.GetComponent<Text>().text= str;
+		GameStatus.GetComponent<Text>().text="1.标记女巫(第一夜)\n2.选择是否救人(女巫除第一晚外不能自救)";
+		ChoosePlayer.SetActive (true);
+		GameObject.Find ("ChoosePlayer/Text").GetComponent<Text>().text= "使用解药？";
+		GameObject.Find ("ChoosePlayer/YES").GetComponent<Button> ().interactable=true;
+		GameObject.Find ("ChoosePlayer/NO").GetComponent<Button> ().interactable=false;
+		//解药没了
+		if (jieyaoyongle == true||jisha==null) {
+			GameObject.Find ("ChoosePlayer/YES").GetComponent<Button> ().interactable=false;
+		}
+		CanClick = true;
+		shiyongjieyao = false;
+
+	}
+	//女巫毒药->等上帝点下一步->守卫阶段
+	void Stage_nvwu_duyao(){
+		GameStage = "女巫毒药";
+		dusha = null;
+		CanClick = true;
+		if (Toggles [6] == 0) {
+			Invoke ("Stage_shouwei", 0.0f);
+			return;
+		}
+		SpeakContent.GetComponent<Text>().text="1.女巫请选择毒杀目标\n2.女巫请闭眼";
+		GameStatus.GetComponent<Text>().text="1.标记被毒杀的人\n2.完成后点击下一步";
+		CanClick = true;
+	}
+	//守卫阶段->等上帝点下一步->先知阶段
+	void Stage_shouwei(){
+		GameStage = "守卫";
+		if (Toggles [7] == 0) {
+			MoveOn ();
+			return;
+		}
+		GameStatus.GetComponent<Text> ().text = "守卫请睁眼，选择守护目标";
+		CanClick = true;
+	}
+
+
+
+	//上帝点下一步
+	public void NextStage(){
+		GoNext.GetComponent<Button> ().interactable=false;
+		PlayerUIConfig.SetActive (false);
+		Invoke ("EnableNextStage", 1.0f);
+		CanClick = false;
+		//丘比特》情侣
+		if (GameStage == "丘比特") {
+			Invoke ("Stage_qinglv", 0.0f);
+			return;
+		}
+		//情侣》狼人
+		if (GameStage == "情侣") {
+			Invoke ("Stage_langren", 0.0f);
+			return;
+		}
+		//狼人》女巫
+		if (GameStage == "狼人") {
+			Invoke ("Stage_nvwu_jieyao", 0.0f);
+			return;
+		}
+		//女巫解药》女巫毒药
+		if (GameStage == "女巫解药") {
+			if (GameObject.Find ("ChoosePlayer/NO").GetComponent<Button> ().interactable == true) {
+				shiyongjieyao = true;
+				jieyaoyongle = true;
+			}
+			Invoke ("Stage_nvwu_duyao", 0.0f);
+			ChoosePlayer.SetActive (false);
+			return;
+		}
+		//女巫毒药》守卫
+		if (GameStage == "女巫毒药") {
+			if (dusha != null) {
+				duyaoyongle = true;
+				PlayerUIConfig.SetActive (true);
+				GameObject.Find ("PlayerConfig/Poison").GetComponent<Button> ().interactable = false;
+				PlayerUIConfig.SetActive (false);
+			}
+			Invoke ("Stage_shouwei", 0.0f);
+			return;
+		}
+
+		if (GameStage == "守卫") {
+			shouhu = null;
+			GameStatus.GetComponent<Text>().text="守卫请闭眼";
+			CanClick = false;
+			GoNext.GetComponent<Button> ().interactable=false;
+			Invoke ("MoveOn", 2.0f);
+			return;
+		}
+		if (GameStage == "先知") {
+			GameStatus.GetComponent<Text>().text="先知请闭眼";
+			CanClick = false;
+			GoNext.GetComponent<Button> ().interactable=false;
+			Invoke ("MoveOn", 2.0f);
+			return;
+		}
+		if (GameStage == "警长") {
+			GameStatus.GetComponent<Text>().text="警长平票，无警长";
+			jingzhang = null;
+			CanClick = false;
+			GoNext.GetComponent<Button> ().interactable=false;
+			Invoke ("MoveOn", 2.0f);
+			return;
+		}
+		if (GameStage == "夜晚结算") {
+			GoNext.GetComponent<Button> ().interactable=false;
+			CanClick = false;
+			MoveOn ();
+			return;
+		}
+		if (GameStage == "讨论") {
+			GoNext.GetComponent<Button> ().interactable=false;
+			MoveOn ();
+			return;
+		}
+		if (GameStage == "选狼人") {
+			toupiao = null;
+			GoNext.GetComponent<Button> ().interactable=false;
+			MoveOn ();
+			return;
+		}
+		if (GameStage == "白天结算") {
+			ShowInfo.SetActive (false);
+			if (jingzhangsiwang||lierensiwang) {
+				MoveOn ();
+			} else {
+				GameStatus.GetComponent<Text> ().text = "天黑请闭眼";
+				GoNext.GetComponent<Button> ().interactable=false;
+				Invoke ("MoveOn", 3.0f);
+			}
+
+			return;
+		}
+		if (GameStage == "转移警长") {
+			GameStatus.GetComponent<Text> ().text = "警徽被撕，无警长";
+			jingzhang = null;
+			GoNext.GetComponent<Button> ().interactable=false;
+			Invoke ("MoveOn", 3.0f);
+			return;
+		}
+		if (GameStage == "猎人") {
+			GameStatus.GetComponent<Text> ().text = "猎人放弃";
+			GoNext.GetComponent<Button> ().interactable=false;
+			Invoke ("MoveOn", 2.0f);
+			return;
+		}
+	}
+
+	//-------------------------------游戏界面控制
+
+
+
+
 	// Update is called once per frame
 	void Update () {
 		if (Input.GetKeyDown (KeyCode.Return)||Input.GetKeyDown (KeyCode.KeypadEnter)) {
@@ -62,7 +428,7 @@ public class GameControl : MonoBehaviour {
 		GN.transform.Translate (Camera.main.WorldToScreenPoint (Position));
 		PlayerNum++;
 	}
-
+	//更新角色列表，去除空节点
 	public void UpdatePlayerList(){
 		int i, j;
 		for (i = 0; i < PlayerNum; i++) {
@@ -80,6 +446,7 @@ public class GameControl : MonoBehaviour {
 	public void MoveCard(bool ison){
 		CanMove = ison;
 	}
+	//给角色编号
 	public void MarkCard(){
         CanMove_hode = CanMove;
         int i;
@@ -188,6 +555,11 @@ public class GameControl : MonoBehaviour {
 		PlayerUI.SetActive (false);
 		CanClick = true;
 	}
+	//角色游戏中配置完成
+	public void PlayerConfigExit(){
+		PlayerUIConfig.SetActive (false);
+		CanClick = true;
+	}
 
 	//角色选择响应
 	public void ToggleControl(int ID,bool ison){
@@ -200,76 +572,6 @@ public class GameControl : MonoBehaviour {
 		}
 	}
 	//开始
-	public void GameStart(){
-		if (GameStage != "准备开始")
-			return;
-		if (PlayerNum < 1) {
-			GameStatus.GetComponent<Text>().text="压根没玩家啊！";
-			return;
-		}
-		if (Toggles [0] > PlayerNum) {
-			GameStatus.GetComponent<Text>().text="角色数量大于玩家数量";
-			return;
-		}
-		if (Toggles [0] < PlayerNum) {
-			GameStatus.GetComponent<Text>().text="角色数量小于玩家数量";
-			return;
-		}
-		ConfigUI.SetActive (false);
-		PlayerUI.SetActive (false);
-		GameStatus.GetComponent<Text>().text="游戏开始";
-		//初始化游戏参数
-		DeadNum =0;
-		day = 0;
-		Lover = 0;
-		Lovers [0] = null;
-		Lovers [1] = null;
-		jisha = null;
-		shouhu = null;
-		nvwu = null;
-		dusha = null;
-		toupiao = null;
-		jingzhang = null;
-		jieyaoyongle = false;
-		duyaoyongle = false;
-		shiyongjieyao = false;
-		shaguozhanglao = false;
-		jingzhangsiwang = false;
-		lierensiwang = false;
-		time = "";
-		diyiye = true;
-		//根据配置获得角色列表
-		int i, j;
-		j = 0;
-		for (i = 1; i <= 18; i++) {
-			if (Toggles [i] == 1) {
-				PlayerRole [j] = RoleList [i-1];
-				j++;
-			}
-		}
-		//随机给每个玩家分配角色
-		int rand;
-		for(i=0;i<PlayerNum;i++){
-			rand = Random.Range (0, PlayerNum - i);
-			Player[i].GetComponent<PlayerCard> ().Role = PlayerRole [rand];
-			Player [i].GetComponent<PlayerCard> ().IsAlive = true;
-			if (PlayerRole [rand] == "女巫")
-				nvwu = Player [i];
-			for(j=rand;j<PlayerNum-1;j++){
-				PlayerRole[j]=PlayerRole[j+1];
-			}
-		}
-		GameStatus.GetComponent<Text>().text="请点击自己的卡牌查看身份";
-		GameStage = "查看身份";
-		CanClick = true;
-		GameObject.Find ("MainCanvas/Mark").GetComponent<Button> ().interactable=false;
-		GameObject.Find ("MainCanvas/Gamestart").GetComponent<Button> ().interactable=false;
-		GameObject.Find ("MainCanvas/GameExit").GetComponent<Button> ().interactable=false;
-		GameObject.Find ("MainCanvas/Addplayer").GetComponent<Button> ().interactable=false;
-		GameObject.Find ("MainCanvas/GameConfigButton").GetComponent<Button> ().interactable=false;
-		GameObject.Find ("MainCanvas/NextStage").GetComponent<Button> ().interactable=true;
-		SortByRole ();
-	}
 
 	void SortByRole(){
 		int i,j;
@@ -357,112 +659,7 @@ public class GameControl : MonoBehaviour {
 		Application.Quit ();
 	}
 
-	public void NextStage(){
-		GoNext.GetComponent<Button> ().interactable=false;
-		if(GameStage=="查看身份"){
-			GameStatus.GetComponent<Text>().text="天黑请闭眼";
-			CanClick = false;
-			GoNext.GetComponent<Button> ().interactable=false;
-			Invoke ("MoveOn", 3.0f);
-			return;
-		}
-		//情侣》狼人
-		if (GameStage == "情侣") {
-			GameStatus.GetComponent<Text> ().text = "情侣请闭眼";
-			CanClick = false;
-			ShowInfo.SetActive (false);
-			GoNext.GetComponent<Button> ().interactable=false;
-			Invoke ("MoveOn", 2.0f);
-			return;
-		}
-		//狼人》女巫
-		if (GameStage == "狼人") {
-			jisha = null;
-			GameStatus.GetComponent<Text>().text="狼人请闭眼";
-			CanClick = false;
-			GoNext.GetComponent<Button> ().interactable=false;
-			Invoke ("MoveOn", 2.0f);
-			return;
-		}
-		if (GameStage == "女巫解药") {
-			CanClick = false;
-			Choose_NO ();
-			return;
-		}
-		if (GameStage == "女巫毒药") {
-			dusha = null;
-			GameStatus.GetComponent<Text>().text="女巫请闭眼";
-			CanClick = false;
-			GoNext.GetComponent<Button> ().interactable=false;
-			Invoke ("MoveOn", 2.0f);
-			return;
-		}
-		if (GameStage == "守卫") {
-			shouhu = null;
-			GameStatus.GetComponent<Text>().text="守卫请闭眼";
-			CanClick = false;
-			GoNext.GetComponent<Button> ().interactable=false;
-			Invoke ("MoveOn", 2.0f);
-			return;
-		}
-		if (GameStage == "先知") {
-			GameStatus.GetComponent<Text>().text="先知请闭眼";
-			CanClick = false;
-			GoNext.GetComponent<Button> ().interactable=false;
-			Invoke ("MoveOn", 2.0f);
-			return;
-		}
-		if (GameStage == "警长") {
-			GameStatus.GetComponent<Text>().text="警长平票，无警长";
-			jingzhang = null;
-			CanClick = false;
-			GoNext.GetComponent<Button> ().interactable=false;
-			Invoke ("MoveOn", 2.0f);
-			return;
-		}
-		if (GameStage == "夜晚结算") {
-			GoNext.GetComponent<Button> ().interactable=false;
-			CanClick = false;
-			MoveOn ();
-			return;
-		}
-		if (GameStage == "讨论") {
-			GoNext.GetComponent<Button> ().interactable=false;
-			MoveOn ();
-			return;
-		}
-		if (GameStage == "选狼人") {
-			toupiao = null;
-			GoNext.GetComponent<Button> ().interactable=false;
-			MoveOn ();
-			return;
-		}
-		if (GameStage == "白天结算") {
-			ShowInfo.SetActive (false);
-			if (jingzhangsiwang||lierensiwang) {
-				MoveOn ();
-			} else {
-				GameStatus.GetComponent<Text> ().text = "天黑请闭眼";
-				GoNext.GetComponent<Button> ().interactable=false;
-				Invoke ("MoveOn", 3.0f);
-			}
-				
-			return;
-		}
-		if (GameStage == "转移警长") {
-			GameStatus.GetComponent<Text> ().text = "警徽被撕，无警长";
-			jingzhang = null;
-			GoNext.GetComponent<Button> ().interactable=false;
-			Invoke ("MoveOn", 3.0f);
-			return;
-		}
-		if (GameStage == "猎人") {
-			GameStatus.GetComponent<Text> ().text = "猎人放弃";
-			GoNext.GetComponent<Button> ().interactable=false;
-			Invoke ("MoveOn", 2.0f);
-			return;
-		}
-	}
+
 
 	void EnableNextStage(){
 		GoNext.GetComponent<Button> ().interactable=true;
@@ -578,199 +775,35 @@ public class GameControl : MonoBehaviour {
 	}
 
 	public void Choose_YES(){
-		ChoosePlayer.SetActive (false);
-		CanClick = true;
-		//选择情侣
-		if (GameStage == "丘比特") {
-			if (Lovers [0] == PlayerNow)
-				GameStatus.GetComponent<Text> ().text = "恋人重复了！";
-			else {
-				Lovers [Lover] = PlayerNow;
-				Lover++;
-			}
-			if (Lover > 1) {
-				GameStatus.GetComponent<Text>().text="丘比特请闭眼";
-				CanClick = false;
-				GoNext.GetComponent<Button> ().interactable=false;
-				Invoke ("ShowLovers", 2.0f);
-			}
-			return;
-		}
-		if (GameStage == "狼人") {
-			jisha = PlayerNow;
-			GameStatus.GetComponent<Text>().text="狼人请闭眼";
-			CanClick = false;
-			GoNext.GetComponent<Button> ().interactable=false;
-			Invoke ("MoveOn", 2.0f);	
-			return;	
-		}
-		if (GameStage == "女巫解药") {
-			shiyongjieyao = true;
-			jieyaoyongle = true;
-			CanClick = false;
-			MoveOn ();
-			return;
-		}
-		if (GameStage == "女巫毒药") {
-			dusha = PlayerNow;
-			duyaoyongle = true;
-			CanClick = false;
-			MoveOn ();
-			return;
-		}
-		if (GameStage == "守卫") {
-			if (shouhu == PlayerNow)
-				GameStatus.GetComponent<Text> ().text = "不能连续2晚守护同一个目标";
-			else {
-				CanClick = false;
-				shouhu = PlayerNow;
-				MoveOn ();
-			}
-			return;
-		}
-		if (GameStage == "先知") {
-			GameStatus.GetComponent<Text> ().text = PlayerNow.GetComponent<PlayerCard> ().PlayerID.ToString () + PlayerNow.GetComponent<PlayerCard> ().Name+"的身份是"+PlayerNow.GetComponent<PlayerCard> ().Role+"\n先知请闭眼";
-			CanClick = false;
-			GoNext.GetComponent<Button> ().interactable=false;
-			Invoke ("MoveOn", 5.0f);
-			return;
-		}
-		if (GameStage == "警长") {
-			jingzhang = PlayerNow;
-			GameStatus.GetComponent<Text> ().text = PlayerNow.GetComponent<PlayerCard> ().PlayerID.ToString () + PlayerNow.GetComponent<PlayerCard> ().Name+"当选警长";
-			CanClick = false;
-			GoNext.GetComponent<Button> ().interactable=false;
-			Invoke ("MoveOn", 2.0f);
-			return;
-		}
-		if (GameStage == "选狼人") {
-			toupiao = PlayerNow;
-			GameStatus.GetComponent<Text> ().text = PlayerNow.GetComponent<PlayerCard> ().PlayerID.ToString () + PlayerNow.GetComponent<PlayerCard> ().Name+"被处决";
-			CanClick = false;
-			GoNext.GetComponent<Button> ().interactable=false;
-			Invoke ("MoveOn", 1.0f);
-			return;
-		}
-		if (GameStage == "转移警长") {
-			jingzhang = PlayerNow;
-			GameStatus.GetComponent<Text> ().text = PlayerNow.GetComponent<PlayerCard> ().PlayerID.ToString () + PlayerNow.GetComponent<PlayerCard> ().Name+"成为警长";
-			CanClick = false;
-			GoNext.GetComponent<Button> ().interactable=false;
-			Invoke ("MoveOn", 2.0f);
-			return;
-		}
-		if (GameStage == "猎人") {
-			die (PlayerNow, "枪杀");
-			GameStatus.GetComponent<Text> ().text = PlayerNow.GetComponent<PlayerCard> ().PlayerID.ToString () + PlayerNow.GetComponent<PlayerCard> ().Name+"被枪杀";
-			CanClick = false;
-			GoNext.GetComponent<Button> ().interactable=false;
-			Invoke ("MoveOn", 2.0f);
-			return;
-		}
+		GameObject.Find ("ChoosePlayer/YES").GetComponent<Button> ().interactable=false;
+		GameObject.Find ("ChoosePlayer/NO").GetComponent<Button> ().interactable=true;
 	}
 
 	public void Choose_NO(){
 		GameObject.Find ("ChoosePlayer/YES").GetComponent<Button> ().interactable=true;
-		ChoosePlayer.SetActive (false);
-		CanClick = true;
-		if (GameStage == "女巫解药") {
-			MoveOn ();
-		}
+		GameObject.Find ("ChoosePlayer/NO").GetComponent<Button> ().interactable=false;
 	}
 
-	void Stage_qiubite(){
-		GameStage = "丘比特";
-		if (Toggles [8] == 0||diyiye==false) {
-			MoveOn ();
-			return;
-		}
-		GameStatus.GetComponent<Text>().text="请丘比特睁眼,选择情侣";
-		CanClick = true;
-	}
 
-	void ShowLovers(){
-		string name1, name2, role1, role2,ID1,ID2;
-		Invoke ("EnableNextStage", 1.0f);
-		GameStage = "情侣";
-		if (Toggles [8] == 0||diyiye==false) {
-			MoveOn ();
-			return;
-		}
-		name1 = Lovers [0].GetComponent<PlayerCard> ().Name;
-		name2 = Lovers [1].GetComponent<PlayerCard> ().Name;
-		role1 = Lovers [0].GetComponent<PlayerCard> ().Role;
-		role2 = Lovers [1].GetComponent<PlayerCard> ().Role;
-		ID1 = Lovers [0].GetComponent<PlayerCard> ().PlayerID.ToString ();
-		ID2 = Lovers [1].GetComponent<PlayerCard> ().PlayerID.ToString ();
-		GameStatus.GetComponent<Text>().text="请情侣互看身份";
-		ShowInfo.SetActive (true);
-		GameObject.Find ("ShowInfo/Text").GetComponent<Text> ().text = ID1 + name1 + "和" + ID2 + name2 + "连为了情侣\n" + ID1 + name1 + "的身份是" + role1 + "\n" + ID2 + name2 + "的身份是" + role2;
-	}
 
-	void Stage_langren(){
-		Invoke ("EnableNextStage", 1.0f);
-		GameStatus.GetComponent<Text>().text="请狼人睁眼并选择击杀目标\n如果平票直接点下一步";
-		GameStage = "狼人";
-		CanClick = true;
-	}
-
-	void Stage_nvwu_jieyao(){
-		string text;
-		GameStage = "女巫解药";
-		if (Toggles [6] == 0) {
-			MoveOn ();
-			return;
-		}
-		text = "女巫请睁眼,";
-		ChoosePlayer.SetActive (true);
-		CanClick = false;
-		//狼人平票
-		if (jisha == null) {
-			GameStatus.GetComponent<Text>().text="请女巫睁眼,狼人没有杀人,使用解药?";
-			GameObject.Find ("ChoosePlayer/YES").GetComponent<Button> ().interactable=false;
-			return;
-		}
-		//女巫被杀
-		if(jisha==nvwu){
-			text+=jisha.GetComponent<PlayerCard> ().PlayerID.ToString()+jisha.GetComponent<PlayerCard> ().Name+"被杀了,不能自救";
-			GameStatus.GetComponent<Text> ().text = text;
-			GameObject.Find ("ChoosePlayer/YES").GetComponent<Button> ().interactable=false;
-			return;
-		}
-		//解药没了
-		if (jieyaoyongle == true) {
-			text+=jisha.GetComponent<PlayerCard> ().PlayerID.ToString()+jisha.GetComponent<PlayerCard> ().Name+"被杀了,解药没了";
-			GameStatus.GetComponent<Text> ().text = text;
-			GameObject.Find ("ChoosePlayer/YES").GetComponent<Button> ().interactable=false;
-			return;
-		}
-		text+=jisha.GetComponent<PlayerCard> ().PlayerID.ToString()+jisha.GetComponent<PlayerCard> ().Name+"被杀了,使用解药?";
-		GameStatus.GetComponent<Text> ().text = text;
-	}
-
-	void Stage_nvwu_duyao(){
-		GameStage = "女巫毒药";
-		if (Toggles [6] == 0) {
-			MoveOn ();
-			return;
-		}
-		if (duyaoyongle == true) {
-			GameStatus.GetComponent<Text> ().text = "是否使用毒药？毒药用过了，直接点下一步";
-		} else {
-			GameStatus.GetComponent<Text> ().text = "是否使用毒药？不使用就直接点下一步";
-			CanClick = true;
-		}
-	}
-
-	void Stage_shouwei(){
-		GameStage = "守卫";
-		if (Toggles [7] == 0) {
-			MoveOn ();
-			return;
-		}
-		GameStatus.GetComponent<Text> ().text = "守卫请睁眼，选择守护目标";
-		CanClick = true;
-	}
+//	void ShowLovers(){
+//		string name1, name2, role1, role2,ID1,ID2;
+//		Invoke ("EnableNextStage", 1.0f);
+//		GameStage = "情侣";
+//		if (Toggles [8] == 0||diyiye==false) {
+//			MoveOn ();
+//			return;
+//		}
+//		name1 = Lovers [0].GetComponent<PlayerCard> ().Name;
+//		name2 = Lovers [1].GetComponent<PlayerCard> ().Name;
+//		role1 = Lovers [0].GetComponent<PlayerCard> ().Role;
+//		role2 = Lovers [1].GetComponent<PlayerCard> ().Role;
+//		ID1 = Lovers [0].GetComponent<PlayerCard> ().PlayerID.ToString ();
+//		ID2 = Lovers [1].GetComponent<PlayerCard> ().PlayerID.ToString ();
+//		GameStatus.GetComponent<Text>().text="请情侣互看身份";
+//		ShowInfo.SetActive (true);
+//		GameObject.Find ("ShowInfo/Text").GetComponent<Text> ().text = ID1 + name1 + "和" + ID2 + name2 + "连为了情侣\n" + ID1 + name1 + "的身份是" + role1 + "\n" + ID2 + name2 + "的身份是" + role2;
+//	}
 
 	void Stage_xianzhi(){
 		GameStage = "先知";
