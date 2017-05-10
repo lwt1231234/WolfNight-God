@@ -6,7 +6,7 @@ public class PlayerCard : MonoBehaviour {
 
 	GameObject GameControl;
 	public GameObject PlayerName,PlayerMark;
-	public string Role,Name;
+	public string Role,Name,WillDie;
 	public int PlayerID;
 	public bool IsAlive,IsLover;
 
@@ -36,8 +36,8 @@ public class PlayerCard : MonoBehaviour {
 			yield break;  
 		GameControl.GetComponent<GameControl> ().PlayerNow = this.gameObject;
 		Vector3 OldMousePosition = Camera.main.ScreenToWorldPoint (Input.mousePosition);
-		Vector3 MarkY = new Vector3(0, 0.5f, 0);
-		Vector3 NameY = new Vector3(0, -0.5f, 0);
+		Vector3 MarkY = new Vector3(0, 0.0f, 0);
+		Vector3 NameY = new Vector3(0, -1.4f, 0);
 		//如果可以移动
 		if (GameControl.GetComponent<GameControl> ().CanMove)
 			while (Input.GetMouseButton (0)) {  
@@ -58,10 +58,8 @@ public class PlayerCard : MonoBehaviour {
 				GameControl.GetComponent<GameControl> ().CanClick = false;
 				GameObject.Find ("PlayerInfo/InputField").GetComponent<InputField> ().text = Name;
 			} else if (GameControl.GetComponent<GameControl> ().GameStage == "标记") {
-				Destroy (PlayerMark);
+				//Destroy (PlayerMark);
 				PlayerID = GameControl.GetComponent<GameControl> ().MarkID;
-				PlayerMark = (GameObject)Instantiate (PlayerName, Camera.main.WorldToScreenPoint (transform.position + MarkY), Quaternion.identity);
-				PlayerMark.transform.SetParent (GameObject.Find ("MainCanvas").transform);
 				PlayerMark.GetComponent<Text> ().text = PlayerID.ToString ();
 				GameControl.GetComponent<GameControl> ().MarkID++;
 				if (GameControl.GetComponent<GameControl> ().MarkID > GameControl.GetComponent<GameControl> ().PlayerNum) {
